@@ -1,7 +1,7 @@
+import type { Config } from '@pandacss/types'
 import { mergeAndConcat } from 'merge-anything'
 import { bundle } from './bundle'
 import { assign, mergeWith } from './utils'
-import type { Config } from '@pandacss/types'
 
 type Extendable<T> = T & { extend?: T }
 type Dict = Record<string, any>
@@ -13,7 +13,13 @@ type ExtendableConfig = Extendable<Config>
  */
 function getExtends(items: ExtendableRecord[]) {
   return items.reduce((merged, { extend }) => {
+    if (!extend) return merged
+
     return mergeWith(merged, extend, (originalValue: any, newValue: any) => {
+      if (newValue === undefined) {
+        return originalValue ?? []
+      }
+
       if (originalValue === undefined) {
         return [newValue]
       }
@@ -47,11 +53,22 @@ function mergeExtensions(records: ExtendableRecord[]) {
   })
 }
 
+const isEmptyObject = (obj: any) => typeof obj === 'object' && Object.keys(obj).length === 0
+
+const compact = (obj: any) => {
+  return Object.keys(obj).reduce((acc, key) => {
+    if (obj[key] !== undefined && !isEmptyObject(obj[key])) {
+      acc[key] = obj[key]
+    }
+    return acc
+  }, {} as any)
+}
+
 /**
  * Merge all configs into a single config
  */
 export function mergeConfigs(configs: ExtendableConfig[]) {
-  return assign(
+  const mergedResult = assign(
     {
       conditions: mergeExtensions(configs.map((config) => config.conditions ?? {})),
       theme: mergeExtensions(configs.map((config) => config.theme ?? {})),
@@ -61,6 +78,8 @@ export function mergeConfigs(configs: ExtendableConfig[]) {
     },
     ...configs,
   )
+
+  return compact(mergedResult)
 }
 
 /**

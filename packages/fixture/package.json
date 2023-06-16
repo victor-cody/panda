@@ -1,6 +1,6 @@
 {
   "name": "@pandacss/fixture",
-  "version": "0.0.2",
+  "version": "0.3.0",
   "private": true,
   "description": "Test fixtures for css panda",
   "main": "dist/index.js",
@@ -16,7 +16,8 @@
     "dist"
   ],
   "dependencies": {
-    "@pandacss/presets": "workspace:*",
+    "@pandacss/preset-base": "workspace:*",
+    "@pandacss/preset-panda": "workspace:*",
     "@pandacss/types": "workspace:*"
   }
 }

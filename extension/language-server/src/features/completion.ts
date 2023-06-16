@@ -3,11 +3,14 @@ import type { PandaExtension } from '../index'
 import { onError } from '../tokens/error'
 
 export function registerCompletion(extension: PandaExtension) {
-  const { connection, documents, documentReady, getClosestCompletionList } = extension
+  const { connection, documents, documentReady, getClosestCompletionList, getPandaSettings } = extension
 
   // This handler provides the initial list of the completion items.
   connection.onCompletion(
     tryCatch(async (params) => {
+      const isEnabled = await getPandaSettings('completions.enabled')
+      if (!isEnabled) return
+
       await documentReady('✅ onCompletion')
 
       const doc = documents.get(params.textDocument.uri)
@@ -16,8 +19,8 @@ export function registerCompletion(extension: PandaExtension) {
       }
 
       // TODO recipe
-      const matches = getClosestCompletionList(doc, params.position)
-      if (!matches) {
+      const matches = await getClosestCompletionList(doc, params.position)
+      if (!matches?.length) {
         return
       }
 

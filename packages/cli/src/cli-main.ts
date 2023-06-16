@@ -13,12 +13,12 @@ import {
   writeAnalyzeJSON,
 } from '@pandacss/node'
 import { compact } from '@pandacss/shared'
+import { buildStudio, previewStudio, serveStudio } from '@pandacss/studio'
 import { cac } from 'cac'
 import { readFileSync } from 'fs'
 import path, { join } from 'path'
 import updateNotifier from 'update-notifier'
 import packageJson from '../package.json' assert { type: 'json' }
-import { buildStudio, previewStudio, serveStudio } from './studio'
 
 export async function main() {
   const cli = cac('panda')
@@ -31,11 +31,15 @@ export async function main() {
     .command('init', "Initialize the panda's config file")
     .option('-f, --force', 'Force overwrite existing config file')
     .option('-p, --postcss', 'Emit postcss config file')
+    .option('--cwd <cwd>', 'Current working directory', { default: cwd })
     .option('--silent', 'Suppress all messages except errors')
     .option('--no-gitignore', "Don't update the .gitignore")
     .option('--out-extension <ext>', "The extension of the generated js files (default: 'mjs')")
+    .option('--jsx-framework <framework>', 'The jsx framework to use')
     .action(async (flags) => {
-      const { force, postcss, silent, gitignore, outExtension } = flags
+      const { force, postcss, silent, gitignore, outExtension, jsxFramework } = flags
+
+      const cwd = path.resolve(flags.cwd)
 
       if (silent) {
         logger.level = 'silent'
@@ -46,9 +50,9 @@ export async function main() {
       const done = logger.time.info('✨ Panda initialized')
 
       if (postcss) await setupPostcss(cwd)
-      await setupConfig(cwd, { force, outExtension })
+      await setupConfig(cwd, { force, outExtension, jsxFramework })
 
-      const ctx = await loadConfigAndCreateContext()
+      const ctx = await loadConfigAndCreateContext({ cwd })
       const msg = await emitArtifacts(ctx)
 
       if (gitignore) {
@@ -97,7 +101,7 @@ export async function main() {
     })
     .option('-o, --outdir <dir>', 'Output directory', { default: 'styled-system' })
     .option('-m, --minify', 'Minify generated code')
-    .option('--cwd <cwd>', 'Current working directory', { default: process.cwd() })
+    .option('--cwd <cwd>', 'Current working directory', { default: cwd })
     .option('-w, --watch', 'Watch files and rebuild')
     .option('-p, --poll', 'Use polling instead of filesystem events when watching')
     .option('-c, --config <path>', 'Path to panda config file')
@@ -123,7 +127,9 @@ export async function main() {
     .option('--outdir', 'Output directory for static files')
     .action(async (flags) => {
       const { build, preview, outdir } = flags
-      const outDir = outdir || path.join(process.cwd(), 'panda-static')
+
+      const ctx = await loadConfigAndCreateContext()
+      const outDir = path.resolve(outdir || ctx.studio.outdir)
 
       if (preview) {
         await previewStudio({ outDir })
@@ -169,11 +175,6 @@ export async function main() {
         return
       }
 
-      // single file bundle is not supported yet
-      // if (flags?.html && typeof flags.html === 'string') {
-      //   return
-      // }
-
       logger.info('cli', `Found ${result.details.byId.size} token used in ${result.details.byFilePathMaps.size} files`)
     })
 
@@ -190,7 +191,7 @@ export async function main() {
         cwd,
         config: maybeGlob ? { include: [maybeGlob] } : (undefined as any),
       })
-      const outdir = path.resolve(cwd, outdirFlag ?? `${ctx.config.outdir}/debug`)
+      const outdir = outdirFlag ?? path.join(...ctx.paths.root, 'debug')
       logger.info('cli', `Found config at ${colors.bold(ctx.path)}`)
 
       await debugFiles(ctx, { outdir, dry })
@@ -209,7 +210,7 @@ export async function main() {
         cwd,
         config: maybeGlob ? { include: [maybeGlob] } : (undefined as any),
       })
-      const outfile = path.resolve(cwd, outfileFlag ?? `${ctx.config.outdir}/panda.json`)
+      const outfile = outfileFlag ?? path.join(...ctx.paths.root, 'debug')
 
       if (minify) {
         ctx.config.minify = true

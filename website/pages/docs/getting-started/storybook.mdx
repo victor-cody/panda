@@ -3,9 +3,9 @@ title: Using Storybook
 description: Easily use Panda with Storybook with our dedicated integration.
 ---
 
-# Using Storybook
+# Using Panda CSS with Storybook
 
-Easily use Panda with Storybook with our dedicated integration.
+Setting up Panda CSS in a Storybook project using PostCSS.
 
 ## Setup
 
@@ -42,19 +42,19 @@ Install panda and create your `panda.config.ts` file.
 <Tabs items={['pnpm', 'npm', 'yarn']}>
   <Tab>
     ```bash
-    pnpm install @pandacss/dev
+    pnpm install -D @pandacss/dev
     pnpm panda init --postcss
     ```
   </Tab>
   <Tab>
     ```bash
-    npm install @pandacss/dev
+    npm install -D @pandacss/dev
     npx panda init --postcss
     ```
   </Tab>
   <Tab>
     ```bash
-    yarn install @pandacss/dev
+    yarn add -D @pandacss/dev
     yarn panda init --postcss
     ```
   </Tab>
@@ -85,7 +85,7 @@ export default defineConfig({
 
 Locate your main CSS file and add the following layers:
 
-```css
+```css filename="src/index.css"
 @layer reset, base, tokens, recipes, utilities;
 ```
 
@@ -200,3 +200,13 @@ export const Default: Story = {
 ```
 
 </Steps>
+
+### Troubleshooting
+
+If you are having issues with the PostCSS plugin similar to `Cannot find module '@pandacss/dev/postcss'`,
+update the PostCSS config as follows:
+
+```js filename="postcss.config.js"
+module.exports = {
+  plugins: [require('@pandacss/dev/postcss')],
+}

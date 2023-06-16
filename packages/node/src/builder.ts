@@ -1,3 +1,4 @@
+import { getConfigDependencies } from '@pandacss/config'
 import { discardDuplicate, mergeCss } from '@pandacss/core'
 import { ConfigNotFoundError } from '@pandacss/error'
 import { logger } from '@pandacss/logger'
@@ -9,7 +10,6 @@ import { findConfig, loadConfigAndCreateContext } from './config'
 import { type PandaContext } from './create-context'
 import { emitArtifacts, extractFile } from './extract'
 import { parseDependency } from './parse-dependency'
-import { getConfigDependencies } from '@pandacss/config'
 
 type ContentData = {
   fileCssMap: Map<string, string>
@@ -68,7 +68,7 @@ export class Builder {
     }
 
     if (setupCount > 0) {
-      logger.info('postcss', '⚙️ Config changed, reloading')
+      logger.debug('builder', '⚙️ Config changed, reloading')
     }
 
     return { isModified: true, modifiedMap: newModified }
@@ -84,17 +84,21 @@ export class Builder {
     return configPath
   }
 
-  async setup() {
-    const configPath = this.getConfigPath()
-    const configDeps = getConfigDependencies(configPath)
+  async setup(options: { configPath?: string } = {}) {
+    logger.debug('builder', '🚧 Setup')
+
+    const configPath = options.configPath ?? this.getConfigPath()
+    const { deps: configDeps } = getConfigDependencies(configPath)
 
     const deps = this.checkConfigDeps(configPath, configDeps)
 
     if (deps.isModified) {
-      return this.setupContext({
+      await this.setupContext({
         configPath,
         depsModifiedMap: deps.modifiedMap,
       })
+      const updatedCtx = this.context!
+      await updatedCtx.hooks.callHook('config:change', updatedCtx.config)
     }
 
     const cache = configCache.get(configPath)

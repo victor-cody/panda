@@ -1,9 +1,7 @@
 import type {
-  AnyPatternConfig,
-  AnyRecipeConfig,
   CompositionStyles,
+  Config,
   CssKeyframes,
-  GenericConfig,
   GlobalStyleObject,
   Parts,
   PatternConfig,
@@ -19,16 +17,16 @@ import type {
  * Config creators
  * -----------------------------------------------------------------------------*/
 
-export function defineConfig<RecipeVariants, PatternProps>(config: GenericConfig<RecipeVariants, PatternProps>) {
+export function defineConfig(config: Config) {
   return config
 }
 
-export function defineRecipe<V extends RecipeVariantRecord>(config: RecipeConfig<V>): AnyRecipeConfig {
-  return config as AnyRecipeConfig
+export function defineRecipe<T extends RecipeVariantRecord>(config: RecipeConfig<T>): RecipeConfig {
+  return config as RecipeConfig
 }
 
-export function definePattern<Pattern>(config: PatternConfig<Pattern>) {
-  return config as AnyPatternConfig
+export function definePattern<T extends PatternConfig>(config: T) {
+  return config as PatternConfig
 }
 
 export function defineParts<T extends Parts>(parts: T) {

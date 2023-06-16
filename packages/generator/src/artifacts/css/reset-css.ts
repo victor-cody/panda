@@ -1,8 +1,10 @@
+import type { Context } from '../../engines'
+
 const css = String.raw
 
-export function generateResetCss(scope = '') {
+export function generateResetCss(ctx: Context, scope = '') {
   const selector = scope ? `${scope} ` : ''
-  return css`
+  const output = css`
     @layer reset {
       ${selector}* {
         margin: 0;
@@ -164,7 +166,7 @@ export function generateResetCss(scope = '') {
       ${selector}samp,
       ${selector}pre {
         font-size: 1em;
-        --font-mono-fallback: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+        --font-mono-fallback: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New';
         font-family: var(--global-font-mono, var(--font-fallback));
       }
 
@@ -195,4 +197,7 @@ export function generateResetCss(scope = '') {
       }
     }
   `
+
+  ctx.hooks.callHook('generator:css', 'reset.css', output)
+  return output
 }

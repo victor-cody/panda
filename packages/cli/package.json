@@ -1,6 +1,6 @@
 {
   "name": "@pandacss/dev",
-  "version": "0.0.2",
+  "version": "0.3.0",
   "description": "The user facing package for panda css",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -13,13 +13,13 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
     },
     "./presets": {
       "types": "./dist/presets.d.ts",
-      "import": "./dist/presets.mjs",
-      "require": "./dist/presets.js"
+      "require": "./dist/presets.js",
+      "import": "./dist/presets.mjs"
     },
     "./postcss": "./postcss.js",
     "./astro": {
@@ -33,47 +33,36 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup src/cli-*.ts src/presets.ts src/index.ts --format=esm,cjs --dts --no-splitting --shims",
+    "build": "tsup src --format=esm,cjs --dts --no-splitting --shims",
     "postbuild": "pnpm app:gen",
-    "build-fast": "tsup src/cli-*.ts src/presets.ts src/index.ts --format=esm,cjs --no-dts --no-splitting --shims",
-    "dev": "pnpm build-fast --watch",
-    "css": "dist/cli-default.js",
-    "app": "cd app && ../dist/cli-default.js --clean",
-    "app:dev": "cd app && ../dist/cli-default.js --watch",
-    "app:gen": "cd app && ../dist/cli-default.js codegen --clean"
+    "build-fast": "tsup src --format=esm,cjs --no-dts --no-splitting --shims",
+    "dev": "pnpm build-fast --watch src"
   },
   "files": [
     "dist",
     "bin",
     "app",
     "bin.js",
+    "*.d.ts",
     "postcss.js",
-    "astro.mjs",
-    "astro.d.ts"
+    "astro.mjs"
   ],
   "dependencies": {
-    "@ark-ui/react": "0.5.0",
-    "@astrojs/react": "2.2.0",
     "@pandacss/config": "workspace:*",
+    "@pandacss/postcss": "workspace:*",
+    "@pandacss/astro": "workspace:*",
+    "@pandacss/studio": "workspace:*",
     "@pandacss/error": "workspace:*",
     "@pandacss/logger": "workspace:*",
     "@pandacss/node": "workspace:*",
+    "@pandacss/preset-panda": "workspace:*",
     "@pandacss/shared": "workspace:*",
     "@pandacss/token-dictionary": "workspace:*",
     "@pandacss/types": "workspace:*",
-    "astro": "2.5.5",
-    "cac": "6.7.14",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "vite": "4.3.9"
+    "cac": "6.7.14"
   },
   "devDependencies": {
-    "@pandacss/presets": "workspace:*",
-    "@types/react": "18.2.7",
-    "@types/react-dom": "18.2.4",
     "@types/update-notifier": "6.0.4",
-    "@vitejs/plugin-react": "4.0.0",
-    "execa": "7.1.1",
     "kleur": "4.1.5",
     "update-notifier": "6.0.2"
   }

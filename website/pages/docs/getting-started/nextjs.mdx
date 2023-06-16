@@ -9,155 +9,282 @@ Panda CSS works out of the box with Next.js. You can use Panda CSS with Next.js 
 
 If you don't have Next.js app installed, you can follow the [Create a Next.js app](#create-a-nextjs-app) section to create a new Next.js app, otherwise you can skip to the [Install Panda CSS](#install-panda-css) section.
 
-## Start a new project
+<RouteSwitch values={["app-dir","pages-dir"]}>
 
-<Steps>
-### Create a Next.js app
+  ## Start a new project
 
-First, create a Next.js app using the official [Create Next App](https://nextjs.org/docs/api-reference/create-next-app) CLI.
-We will name our project `test-app` but you can name it whatever you want.
+  You can chose between these two options to start a new project:
 
-If you don't enter any parameter, the CLI will guide you through the process of creating a new Next.js app.
+  <RouteSwitchTrigger values={["Using App Router", "Using Pages Router"]} />
 
-<Tabs items={['pnpm', 'npm', 'yarn']}>
-  <Tab>
+  <Steps>
+  ### Create a Next.js app
+
+  First, create a Next.js app using the official [Create Next App](https://nextjs.org/docs/api-reference/create-next-app) CLI.
+  We will name our project `test-app` but you can name it whatever you want.
+
+  If you don't enter any parameter, the CLI will guide you through the process of creating a new Next.js app.
+
+  <Tabs items={['pnpm', 'npm', 'yarn']}>
+    <Tab>
+      ```bash
+      pnpm dlx create-next-app@latest --use-pnpm
+      ```
+    </Tab>
+    <Tab>
+      ```bash
+      npx create-next-app@latest --use-npm
+      ```
+    </Tab>
+    <Tab>
+      ```bash
+      yarn dlx create-next-app@latest --use-yarn
+      ```
+    </Tab>
+  </Tabs>
+
+  You will be asked a few questions, answer them as follows:
+
+  <RouteSwitchContent value="app-dir">
     ```bash
-    pnpm dlx create-next-app@latest --use-pnpm
+    ✔ What is your project named? … test-app
+    ✔ Would you like to use TypeScript with this project? … Yes
+    ✔ Would you like to use ESLint with this project? … Yes
+    ✔ Would you like to use Tailwind CSS with this project? … No
+    ✔ Would you like to use `src/` directory with this project? … Yes
+    ✔ Use App Router (recommended)? … Yes
+    ✔ Would you like to customize the default import alias? … No
     ```
-  </Tab>
-  <Tab>
+  </RouteSwitchContent>
+  <RouteSwitchContent value="pages-dir">
     ```bash
-    npx create-next-app@latest --use-npm
+    ✔ What is your project named? … test-app
+    ✔ Would you like to use TypeScript with this project? … Yes
+    ✔ Would you like to use ESLint with this project? … Yes
+    ✔ Would you like to use Tailwind CSS with this project? … No
+    ✔ Would you like to use `src/` directory with this project? … Yes
+    ✔ Use App Router (recommended)? … No
+    ✔ Would you like to customize the default import alias? … No
     ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn dlx create-next-app@latest --use-yarn
-    ```
-  </Tab>
-</Tabs>
+  </RouteSwitchContent>
 
-You will be asked a few questions, answer them as follows:
-```bash
-✔ What is your project named? … test-app
-✔ Would you like to use TypeScript with this project? … Yes
-✔ Would you like to use ESLint with this project? … Yes
-✔ Would you like to use Tailwind CSS with this project? … No
-✔ Would you like to use `src/` directory with this project? … Yes
-✔ Use App Router (recommended)? … Yes
-✔ Would you like to customize the default import alias? … No
-```
+  Enter the newly created directory:
+  ```bash
+  cd test-app
+  ```
 
-Enter the newly created directory:
-```bash
-cd test-app
-```
+  ### Install Panda CSS
 
-### Install Panda CSS
+  Install Panda CSS dependency using your favorite package manager.
 
-Install Panda CSS dependency using your favorite package manager.
+  <Tabs items={['pnpm', 'npm', 'yarn']}>
+    <Tab>
+      ```bash
+      pnpm install -D @pandacss/dev
+      pnpm panda init --postcss
+      ```
+    </Tab>
+    <Tab>
+      ```bash
+      npm install -D @pandacss/dev
+      npx panda init --postcss
+      ```
+    </Tab>
+    <Tab>
+      ```bash
+      yarn add -D @pandacss/dev
+      yarn panda init --postcss
+      ```
+    </Tab>
+  </Tabs>
 
-<Tabs items={['pnpm', 'npm', 'yarn']}>
-  <Tab>
-    ```bash
-    pnpm install @pandacss/dev
-    pnpm panda init -p
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    npm install @pandacss/dev
-    npx panda init -p
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn install @pandacss/dev
-    yarn panda init -p
-    ```
-  </Tab>
-</Tabs>
+  `panda init --postcss` command will automatically create a `postcss.config.js` file at the root of your project with the following code:
 
-### Update package.json scripts
-
-Open your `package.json` file and update the `scripts` section as follows:
-
-```diff
-{
-  "scripts": {
-+    "prepare": "panda codegen",
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+  ```js {3}
+  module.exports = {
+    plugins: {
+      '@pandacss/dev/postcss': {},
+    },
   }
-}
-```
-- `"prepare"` - script that will run Panda CSS CLI codegen before each build. Read more about [codegen](/docs/references/cli#panda-codegen) in the CLI section.
+  ```
 
-### Add panda CSS styles to your app layout
+  For advanced configuration follow the Next.js PostCSS guide to set up a custom PostCSS configuration by referring to this [link](https://nextjs.org/docs/pages/building-your-application/configuring/post-css#customizing-plugins).
 
-In your Next.js project, navigate to the `src/app` folder and open `global.css` file. Replace all the content with the following code:
+  ### Update package.json scripts
 
-```css
-@layer reset, base, tokens, recipes, utilities;
-```
+  Open your `package.json` file and update the `scripts` section as follows:
 
-### PostCSS config
+  ```diff {3}
+  {
+    "scripts": {
+  +    "prepare": "panda codegen",
+      "dev": "next dev",
+      "build": "next build",
+      "start": "next start",
+      "lint": "next lint"
+    }
+  }
+  ```
 
-`panda init -p` command will automatically create a `postcss.config.js` file in the root of your project with the following code:
+  The `prepare` script that will run codegen after dependency installation. Read more about [codegen](/docs/references/cli#panda-codegen) in the CLI section.
 
-```js
-module.exports = {
-  plugins: {
-    '@pandacss/dev/postcss': {},
-  },
-}
-```
+  ### Configure the content
 
-For advanced configuration follow the Next.js PostCSS guide to set up a custom PostCSS configuration by referring to this [link](https://nextjs.org/docs/pages/building-your-application/configuring/post-css#customizing-plugins).
+  Make sure that all of the paths of your React components are included in the `include` section of the `panda.config.ts` file.
 
-### Start using Panda
+  <RouteSwitchContent value="app-dir">
+  ```js {8} filename="panda.config.ts"
+  import { defineConfig } from "@pandacss/dev"
 
-We will update the contents of `page.tsx` with the following snippet that uses Panda CSS:
+  export default defineConfig({
+  // Whether to use css reset
+  preflight: true,
 
-```tsx
-import { css } from '../../styled-system/css';
+  // Where to look for your css declarations
+  include: ["./src/components/**/*.{tsx,jsx}", "./src/app/**/*.{tsx,jsx}"],
 
-export default function Home() {
-  return (
-    <div className={css({ fontSize: "2xl", fontWeight: 'bold' })}>Hello 🐼!</div>
-  )
-}
-```
+  // Files to exclude
+  exclude: [],
 
-> **Note:** You can also remove `page.module.css` file as we don't need it anymore.
+  // The output directory for your css system
+  outdir: "styled-system",
+  })
+  ```
+   </RouteSwitchContent>
+  <RouteSwitchContent value="pages-dir">
+  ```js {8} filename="panda.config.ts"
+  import { defineConfig } from "@pandacss/dev"
 
-### Start the development server
+  export default defineConfig({
+  // Whether to use css reset
+  preflight: true,
 
-Run the following command to start the development server:
+  // Where to look for your css declarations
+  include: ["./src/components/**/*.{tsx,jsx}", "./src/pages/**/*.{tsx,jsx}"],
 
-<Tabs items={['pnpm', 'npm', 'yarn']}>
-  <Tab>
-    ```bash
-    pnpm dev
+  // Files to exclude
+  exclude: [],
+
+  // The output directory for your css system
+  outdir: "styled-system",
+  })
+  ```
+  </RouteSwitchContent>
+
+  ### Configure the entry CSS with layers
+
+  <RouteSwitchContent value="app-dir">
+    In your Next.js project, navigate to the `src/app` folder and open `global.css` file. Replace all the content with the following code:
+  </RouteSwitchContent>
+  <RouteSwitchContent value="pages-dir">
+    In your Next.js project, navigate to the `src/styles` folder and open `globals.css` file. Replace all the content with the following code:
+  </RouteSwitchContent>
+
+  ```css
+     @layer reset, base, tokens, recipes, utilities;
+  ```
+
+  <RouteSwitchContent value="app-dir">
+    > **Note:** Feel free to remove the `page.module.css` file as we don't need it anymore.
+  </RouteSwitchContent>
+  <RouteSwitchContent value="pages-dir">
+    > **Note:** Feel free to remove the `Home.module.css` file as we don't need it anymore.
+  </RouteSwitchContent>
+
+  ### Import the entry CSS in your app
+
+  <RouteSwitchContent value="app-dir">
+  Make sure that you import the `global.css` file in your `src/app/layout.tsx` file as follows:
+
+  ```tsx {1} filename="./src/app/layout.tsx"
+    import './globals.css'
+    import { Inter } from 'next/font/google'
+
+    const inter = Inter({ subsets: ['latin'] })
+
+    export const metadata = {
+      title: 'Create Next App',
+      description: 'Generated by create next app',
+    }
+
+    export default function RootLayout({
+      children,
+    }: {
+      children: React.ReactNode
+    }) {
+      return (
+        <html lang="en">
+          <body className={inter.className}>{children}</body>
+        </html>
+      )
+    }
+  ```
+  </RouteSwitchContent>
+  <RouteSwitchContent value="pages-dir">
+  Make sure that you import the `globals.css` file in your `src/pages/_app.tsx` file as follows:
+
+  ```tsx {1} filename="./src/pages/_app.tsx"
+    import '../styles/globals.css'
+    import type { AppProps } from 'next/app'
+    import { Inter } from 'next/font/google'
+
+    const inter = Inter({ subsets: ['latin'] })
+
+    export default function App({ Component, pageProps }: AppProps) {
+      return (
+        <main className={inter.className}>
+          <Component {...pageProps} />
+        </main>
+      );
+    }
+  ```
+  </RouteSwitchContent>
+
+  ### Start using Panda
+
+  <RouteSwitchContent value="app-dir">
+    We will update the contents of `src/app/page.tsx` with the following snippet that uses Panda CSS:
+  </RouteSwitchContent>
+  <RouteSwitchContent value="pages-dir">
+    We will update the contents of `src/pages/index.tsx` with the following snippet that uses Panda CSS:
+  </RouteSwitchContent>
+
+  ```tsx
+    import { css } from '../../styled-system/css';
+
+    export default function Home() {
+      return (
+        <div className={css({ fontSize: "2xl", fontWeight: 'bold' })}>Hello 🐼!</div>
+      )
+    }
     ```
-  </Tab>
-  <Tab>
-    ```bash
-    npm run dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn dev
-    ```
-  </Tab>
-</Tabs>
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+  ### Start the development server
 
-</Steps>
+  Run the following command to start the development server:
+
+  <Tabs items={['pnpm', 'npm', 'yarn']}>
+    <Tab>
+      ```bash
+      pnpm dev
+      ```
+    </Tab>
+    <Tab>
+      ```bash
+      npm run dev
+      ```
+    </Tab>
+    <Tab>
+      ```bash
+      yarn dev
+      ```
+    </Tab>
+  </Tabs>
+
+  Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+  </Steps>
+</RouteSwitch>
 
 ## Troubleshooting
 
@@ -165,7 +292,7 @@ Sometimes Next.js caches PostCSS generated styles and you need to clear the cach
 
 You can also update you `package.json` scripts to delete the `.next` folder before each build:
 
-```diff
+```diff {3,4}
 {
   "scripts": {
 -    "dev": "next dev",

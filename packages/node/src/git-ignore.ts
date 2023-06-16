@@ -3,12 +3,16 @@ import { lookItUpSync } from 'look-it-up'
 import outdent from 'outdent'
 import type { PandaContext } from './create-context'
 
-export function setupGitIgnore({ config: { outdir, gitignore = true } }: PandaContext) {
+export function setupGitIgnore(ctx: PandaContext) {
+  const { outdir, gitignore } = ctx.config
+
   if (!gitignore) return
 
-  const txt = outdent`## Panda
+  const txt = outdent`
+  
+  ## Panda
   ${outdir}
-  ${outdir}-static
+  ${ctx.studio.outdir}
   `
 
   const file = lookItUpSync('.gitignore')

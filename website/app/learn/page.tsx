@@ -1,13 +1,11 @@
-import { SectionFooter } from '../section.footer'
-import { SectionArticleList } from './section.article-list'
-import { SectionLearn } from './section.learn'
+import { SectionLearn } from '@/components/sections/learn'
+import { SectionVideos } from '@/components/sections/learn-video'
 
 export default function Page() {
   return (
     <>
       <SectionLearn />
-      <SectionArticleList />
-      <SectionFooter />
+      <SectionVideos />
     </>
   )
 }

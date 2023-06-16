@@ -1,10 +1,6 @@
 import { defineConfig } from '@pandacss/dev'
 
 export default defineConfig({
-  studio: {
-    title: 'Chakra UI',
-    logo: 'https://place-hold.it/36x24',
-  },
   preflight: true,
   include: ['./src/**/*.{tsx,jsx}', './pages/**/*.{jsx,tsx}'],
   exclude: [],
@@ -55,6 +51,11 @@ export default defineConfig({
             },
             hovered: {
               color: 'pink.400',
+            },
+          },
+          rounded: {
+            true: {
+              borderRadius: 'md',
             },
           },
         },

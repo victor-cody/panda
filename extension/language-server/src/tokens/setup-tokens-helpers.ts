@@ -1,18 +1,21 @@
 import { CompletionItem, CompletionItemKind, Position, Range } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
-import { PandaExtensionSetup } from '../setup-builder'
-
-import { Dict, ParserResult, RawCondition, ResultItem, SystemStyleObject } from '@pandacss/types'
-import { CallExpression, Identifier, JsxOpeningElement, JsxSelfClosingElement, Node, ts } from 'ts-morph'
+import { type PandaExtensionSetup } from '../setup-builder'
 
 import {
-  BoxContext,
+  type Dict,
+  type ParserResultType,
+  type RawCondition,
+  type ResultItem,
+  type SystemStyleObject,
+} from '@pandacss/types'
+import { CallExpression, Identifier, JsxOpeningElement, JsxSelfClosingElement, Node, SourceFile, ts } from 'ts-morph'
+
+import {
   BoxNodeArray,
   BoxNodeLiteral,
   BoxNodeMap,
   BoxNodeObject,
-  PrimitiveType,
-  Unboxed,
   box,
   extractCallExpressionArguments,
   extractJsxAttribute,
@@ -20,16 +23,21 @@ import {
   findIdentifierValueDeclaration,
   maybeBoxNode,
   unbox,
+  type BoxContext,
+  type PrimitiveType,
+  type Unboxed,
 } from '@pandacss/extractor'
 import { type PandaContext } from '@pandacss/node'
 import { walkObject } from '@pandacss/shared'
+import { type ParserResult } from '@pandacss/parser'
+import { type Token } from '@pandacss/token-dictionary'
 import { Bool } from 'lil-fp'
+import { type PandaVSCodeSettings } from '@pandacss/extension-shared'
 import { match } from 'ts-pattern'
 import { color2kToVsCodeColor } from './color2k-to-vscode-color'
-import { expandTokenFn } from './expand-token-fn'
+import { expandTokenFn, extractTokenPaths } from './expand-token-fn'
 import { isColor } from './is-color'
-import { Token } from './types'
-import { getMarkdownCss, getNodeRange, isObjectLike, nodeRangeToVsCodeRange, printTokenValue } from './utils'
+import { getMarkdownCss, isObjectLike, nodeRangeToVsCodeRange, printTokenValue } from './utils'
 
 type ClosestMatch = {
   range: Range
@@ -118,7 +126,7 @@ export function setupTokensHelpers(setup: PandaExtensionSetup) {
     const ctx = setup.getContext()
     if (!ctx) return
 
-    return ctx.project.getSourceFile(doc.uri)
+    return ctx.project.getSourceFile(doc.uri) as SourceFile | undefined
   }
 
   /**
@@ -131,7 +139,7 @@ export function setupTokensHelpers(setup: PandaExtensionSetup) {
     const project = ctx.project
 
     project.addSourceFile(doc.uri, doc.getText())
-    return project.parseSourceFile(doc.uri)
+    return project.parseSourceFile(doc.uri) as ParserResult
   }
 
   const createResultTokensGetter = (onToken: OnTokenCallback) => {
@@ -160,7 +168,7 @@ export function setupTokensHelpers(setup: PandaExtensionSetup) {
           const token = getTokenFromPropValue(ctx, propName, value)
           if (!token) return
 
-          const range = nodeRangeToVsCodeRange(getNodeRange(propNode.getNode()))
+          const range = nodeRangeToVsCodeRange(propNode.getRange())
           onToken?.({ kind: 'token', token, range, propName, propValue: value, propNode })
         })
       })
@@ -170,7 +178,7 @@ export function setupTokensHelpers(setup: PandaExtensionSetup) {
   /**
    * Get all the tokens from the document and call a callback on it.
    */
-  function getFileTokens(_doc: TextDocument, parserResult: ParserResult, onToken: OnTokenCallback) {
+  function getFileTokens(_doc: TextDocument, parserResult: ParserResultType, onToken: OnTokenCallback) {
     const ctx = setup.getContext()
     if (!ctx) return
 
@@ -178,6 +186,11 @@ export function setupTokensHelpers(setup: PandaExtensionSetup) {
 
     parserResult.css.forEach(onResult)
     parserResult.jsx.forEach(onResult)
+    parserResult.cva.forEach((item) =>
+      item.data.forEach(({ base }) =>
+        onResult(Object.assign({}, item, { box: item.box.value.get('base'), data: [base] })),
+      ),
+    )
   }
 
   const getNodeAtPosition = (doc: TextDocument, position: Position) => {
@@ -339,7 +352,7 @@ export function setupTokensHelpers(setup: PandaExtensionSetup) {
         const maybeToken = getTokenFromPropValue(ctx, propName, String(propValue))
         if (!maybeToken) return
 
-        const range = nodeRangeToVsCodeRange(getNodeRange(propNode.getNode()))
+        const range = nodeRangeToVsCodeRange(propNode.getRange())
         return { kind: 'token', token: maybeToken, range, propName, propValue, propNode } as ClosestTokenMatch
       }
 
@@ -351,7 +364,7 @@ export function setupTokensHelpers(setup: PandaExtensionSetup) {
           const propValue = unbox(propNode).raw
           const condition = ctx.conditions.getRaw(propName)
 
-          const range = nodeRangeToVsCodeRange(getNodeRange(propNode.getNode()))
+          const range = nodeRangeToVsCodeRange(propNode.getRange())
           return { kind: 'condition', condition, range, propName, propValue, propNode } as ClosestConditionMatch
         }
       }
@@ -383,18 +396,19 @@ export function setupTokensHelpers(setup: PandaExtensionSetup) {
     })
   }
 
-  const getClosestCompletionList = (doc: TextDocument, position: Position) => {
+  const getClosestCompletionList = async (doc: TextDocument, position: Position) => {
     const ctx = setup.getContext()
     if (!ctx) return
 
     const match = getNodeAtPosition(doc, position)
     if (!match) return
 
+    const settings = await setup.getPandaSettings()
     const { node, stack } = match
 
     return findClosestToken(node, stack, ({ propName, propNode }) => {
       if (!box.isLiteral(propNode)) return undefined
-      return getCompletionFor(ctx, propName, propNode.value)
+      return getCompletionFor(ctx, propName, propNode, settings)
     })
   }
 
@@ -500,21 +514,60 @@ const getTokenFromPropValue = (ctx: PandaContext, prop: string, value: string): 
 const completionCache = new Map<string, CompletionItem[]>()
 const itemCache = new Map<string, CompletionItem>()
 
-const getCompletionFor = (ctx: PandaContext, propName: string, propValue: PrimitiveType) => {
-  const cachePath = propName + '.' + propValue
+const getCompletionFor = (
+  ctx: PandaContext,
+  propName: string,
+  propNode: BoxNodeLiteral,
+  settings: PandaVSCodeSettings,
+) => {
+  const propValue = propNode.value
+
+  let str = String(propValue)
+  let category: string | undefined
+
+  // also provide completion in string such as: token('colors.blue.300')
+  if (settings['completions.token-fn.enabled'] && str.includes('token(')) {
+    const matches = extractTokenPaths(str)
+    const tokenPath = matches[0] ?? ''
+    const split = tokenPath.split('.').filter(Boolean)
+
+    // provide completion for token category when token() is empty or partial
+    if (split.length < 1) {
+      return Array.from(ctx.tokens.categoryMap.keys()).map((category) => {
+        return {
+          label: category,
+          kind: CompletionItemKind.EnumMember,
+          sortText: '-' + category,
+          preselect: true,
+        } as CompletionItem
+      })
+    }
+
+    str = tokenPath.split('.').slice(1).join('.')
+    category = split[0]
+  }
+
+  const cachePath = propName + '.' + str
   const cachedList = completionCache.get(cachePath)
   if (cachedList) return cachedList
 
-  const utility = ctx.config.utilities?.[propName]
-  const category = typeof utility?.values === 'string' && utility?.values
-  if (!category) return
+  // token(colors.red.300) -> category = "colors"
+  // color="red.300" -> no category, need to find it
+  if (!category) {
+    const utility = ctx.config.utilities?.[propName]
+    if (typeof utility?.values === 'string' && utility?.values) {
+      category = utility.values
+    }
+  }
+
+  if (!category) return []
 
   const values = ctx.tokens.categoryMap.get(category)
-  if (!values) return
+  if (!values) return []
 
   const items = [] as CompletionItem[]
   values.forEach((token, name) => {
-    if (!name.includes(String(propValue))) return
+    if (str && !name.includes(str)) return
 
     const tokenPath = token.name
     const cachedItem = itemCache.get(tokenPath)
@@ -527,8 +580,8 @@ const getCompletionFor = (ctx: PandaContext, propName: string, propValue: Primit
     const completionItem = {
       label: name,
       kind: isColor ? CompletionItemKind.Color : CompletionItemKind.EnumMember,
-      documentation: { kind: 'markdown', value: getMarkdownCss(ctx, { [propName]: token.value }).withCss },
-      labelDetails: { description: printTokenValue(token), detail: `   ${token.extensions.varRef}` },
+      documentation: { kind: 'markdown', value: getMarkdownCss(ctx, { [propName]: token.value }, settings).withCss },
+      labelDetails: { description: printTokenValue(token, settings), detail: `   ${token.extensions.varRef}` },
       sortText: '-' + name,
       preselect: true,
     } as CompletionItem

@@ -9,13 +9,11 @@ import { globalCss } from './theme/global-css'
 
 export default defineConfig({
   preflight: true,
-  presets: ['@pandacss/dev/presets'],
   // define the content to scan 👇🏻
   include: [
-    './src/**/*.{tsx,jsx}',
+    './src/**/*.{tsx,ts,jsx}',
     './pages/**/*.{jsx,tsx}',
     './app/**/*.{jsx,tsx}',
-    './bright/**/*.{jsx,ts,tsx}',
     './theme.config.tsx'
   ],
   exclude: [],
@@ -40,7 +38,7 @@ export default defineConfig({
       dark: '.dark &, [data-theme="dark"] &',
       light: '.light &',
       supportsBackdrop:
-        '@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px)))'
+        '@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px)))',
     }
   },
   staticCss: {
@@ -67,6 +65,10 @@ export default defineConfig({
       layerStyles,
       keyframes: {
         fadein: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' }
+        },
+        fadein2: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' }
         },

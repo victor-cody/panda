@@ -1,6 +1,6 @@
 {
   "name": "@pandacss/parser",
-  "version": "0.0.2",
+  "version": "0.3.0",
   "description": "The static parser for panda css",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -27,7 +27,8 @@
   },
   "devDependencies": {
     "@pandacss/fixture": "workspace:*",
-    "@pandacss/generator": "workspace:*"
+    "@pandacss/generator": "workspace:*",
+    "hookable": "5.5.3"
   },
   "files": [
     "dist"
