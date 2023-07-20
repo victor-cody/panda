@@ -48,6 +48,7 @@
     "astro.mjs"
   ],
   "dependencies": {
+    "@clack/prompts": "^0.6.3",
     "@pandacss/astro": "workspace:*",
     "@pandacss/config": "workspace:*",
     "@pandacss/error": "workspace:*",

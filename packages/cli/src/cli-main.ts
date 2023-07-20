@@ -21,6 +21,7 @@ import { join, resolve } from 'pathe'
 import { debounce } from 'perfect-debounce'
 import updateNotifier from 'update-notifier'
 import { name, version } from '../package.json'
+import { cliInit } from './cli-init'
 
 export async function main() {
   updateNotifier({ pkg: { name, version }, distTag: 'latest' }).notify()
@@ -31,6 +32,8 @@ export async function main() {
 
   cli
     .command('init', "Initialize the panda's config file")
+    .option('-i, --interactive', 'Run init in interactive mode', { default: true })
+    .option('--no-interactive', 'Run init in manual mode')
     .option('-f, --force', 'Force overwrite existing config file')
     .option('-p, --postcss', 'Emit postcss config file')
     .option('-c, --config <path>', 'Path to panda config file')
@@ -40,7 +43,13 @@ export async function main() {
     .option('--out-extension <ext>', "The extension of the generated js files (default: 'mjs')")
     .option('--jsx-framework <framework>', 'The jsx framework to use')
     .option('--syntax <syntax>', 'The css syntax preference')
-    .action(async (flags) => {
+    .action(async (_flags) => {
+      let options = {}
+      if (_flags.interactive) {
+        options = await cliInit()
+      }
+
+      const flags = { ..._flags, ...options }
       const { force, postcss, silent, gitignore, outExtension, jsxFramework, config: configPath, syntax } = flags
 
       const cwd = resolve(flags.cwd)
